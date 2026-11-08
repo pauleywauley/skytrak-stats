@@ -57,11 +57,11 @@ button:disabled { opacity: .35; cursor: default; }
 .map-stats b { font-size: 1.88rem; font-weight: 500; line-height: 1.05; }
 .none { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; color: var(--ink-2); font-size: 1.45rem; text-align: center; }
 .shape-card { position: absolute; z-index: 2; top: 4rem; left: .73rem; right: .73rem; padding: .55rem .8rem .5rem; border-radius: .42rem; background: rgba(4,7,9,.78); text-align: center; }
-.shape-name { font-size: 3.4rem; font-weight: 600; letter-spacing: .02em; line-height: 1.05; text-transform: uppercase; white-space: nowrap; }
+.shape-name { color: var(--lime); font-size: 2.2rem; font-weight: 600; letter-spacing: .03em; line-height: 1.05; text-transform: uppercase; white-space: nowrap; }
+.shape-why { font-size: 1.85rem; font-weight: 500; line-height: 1.16; min-height: 4.3rem; margin-top: .15rem; }
 .shape-facts { display: grid; grid-template-columns: 1fr 1fr; margin-top: .25rem; }
 .shape-facts i { display: block; font-style: normal; color: var(--lime); font-size: 1.1rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
 .shape-facts b { font-size: 1.7rem; font-weight: 500; white-space: nowrap; }
-.shape-note { color: var(--ink-2); font-size: 1.05rem; margin-top: .2rem; white-space: nowrap; }
 svg { display: block; }
 svg text { fill: #fff; font-size: 1.1rem; font-family: inherit; }
 #estNote, #scaleNote { position: absolute; z-index: 2; bottom: 5rem; color: var(--ink-2); font-size: 1.05rem; }
@@ -176,11 +176,11 @@ th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: l
     </div>
     <div class="shape-card" id="shapeCard" hidden>
       <div class="shape-name" id="shapeName"></div>
+      <div class="shape-why" id="shapeWhy"></div>
       <div class="shape-facts">
         <div><i>Started</i><b id="shapeStart"></b></div>
         <div><i>Spin curved it</i><b id="shapeCurve"></b></div>
       </div>
-      <div class="shape-note">Start comes mostly from the face. Curve comes from face vs path.</div>
     </div>
     <div class="map" id="map"></div>
     <div id="estNote"></div>
@@ -292,6 +292,22 @@ function rating(t, s) {
   return grade(v >= low && v <= high ? 'good' : v >= closeLow && v <= closeHigh ? 'close' : 'off', `${low}–${high}`);
 }
 
+// Ball-flight laws: the ball starts mostly where the face points, and curves by the
+// face relative to the path. start and axis are already mirrored for a left-hander.
+function shapeReason(s, start, axis) {
+  const aim = start >= 2 ? 'open' : start <= -2 ? 'closed' : 'square';
+  const toPath = Math.abs(axis) < 2.5 ? 'matched' : axis < 0 ? 'closed' : 'open';
+  if (toPath === 'matched') {
+    if (aim === 'square') return 'Face and path matched, and both pointed at the target.';
+    return `Face and path matched, but both pointed ${Math.abs(start) >= 6 ? 'well ' : ''}${s.hla > 0 ? 'right' : 'left'} of the target.`;
+  }
+  const gap = `${Math.abs(axis) >= 15 ? 'very ' : ''}${toPath} to your path`;
+  const path = toPath === 'closed' ? 'in-to-out' : 'out-to-in';
+  if (aim === 'square') return `Face was square to the target but ${gap}. Swing path went ${path}.`;
+  if (aim !== toPath) return `Face was ${aim} to the target but ${gap}. Swing path went well ${path}.`;
+  return `Face was ${aim} to the target and ${gap} too. The face did most of this.`;
+}
+
 // Start direction is side angle and curve is spin axis, so both halves are measured.
 // Golf's names depend on handedness; the directions shown beside them never do.
 function shotShape(s) {
@@ -302,6 +318,7 @@ function shotShape(s) {
   const side = v => (v > 0 ? 'Right' : 'Left');
   return {
     name: [opening, curve].join(' ').trim() || 'Straight',
+    why: shapeReason(s, start, axis),
     start: Math.abs(s.hla) < 2 ? `On line, ${num(Math.abs(s.hla), 1)}°` : `${side(s.hla)} ${num(Math.abs(s.hla), 1)}°`,
     curve: curved ? `${side(s.spinAxis)}, axis ${num(Math.abs(s.spinAxis), 0)}°` : 'No curve',
   };
@@ -312,6 +329,7 @@ function renderShape(s) {
   $('shapeCard').hidden = !shape;
   if (!shape) return;
   $('shapeName').textContent = shape.name;
+  $('shapeWhy').textContent = shape.why;
   $('shapeStart').textContent = shape.start;
   $('shapeCurve').textContent = shape.curve;
 }
@@ -470,7 +488,7 @@ function drawMap(s, session) {
   const far = Math.max(40, ...pool.map(x => x.carry));
   const step = far > 180 ? 50 : far > 70 ? 25 : 10;
   const top = Math.ceil(far * 1.12 / step) * step;
-  const margin = { t: ($('shapeCard').hidden ? 4 : 15.2) * r, b: 1.8 * r };
+  const margin = { t: ($('shapeCard').hidden ? 4 : 16.6) * r, b: 1.8 * r };
   const perYard = (H - margin.t - margin.b) / top;
   const room = (W / 2 - 3 * r) / perYard;
   const widest = Math.max(1, ...pool.map(x => Math.abs(x.offline)));
