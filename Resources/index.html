@@ -716,7 +716,7 @@ function renderUpdate() {
   const u = S.update;
   if (!u) return;
   const labels = {
-    available: `Update to v${u.latest}`, checking: 'Checking for updates', downloading: 'Downloading update',
+    available: 'Update available', checking: 'Checking for updates', downloading: 'Downloading update',
     installing: 'Restarting', failed: 'Update failed, try again', offline: `v${u.current}, can't reach GitHub`,
   };
   const text = labels[u.phase] || `v${u.current}, up to date`;
