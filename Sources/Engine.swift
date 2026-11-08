@@ -109,6 +109,7 @@ final class Engine {
             catchingUp = false
             store.saveIfNeeded()
             send("shots", store.shots)
+            send("ranges", OptimalRanges.load())
 
             let source = DispatchSource.makeTimerSource(queue: queue)
             source.schedule(deadline: .now(), repeating: 0.25)

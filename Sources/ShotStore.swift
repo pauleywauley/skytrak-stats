@@ -47,8 +47,21 @@ final class ShotStore {
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
         if let data = try? Data(contentsOf: file),
            let saved = try? JSONDecoder().decode([Shot].self, from: data) {
-            shots = saved
+            shots = saved.map(ShotStore.withCorrectTime).sorted { $0.time < $1.time }
         }
+    }
+
+    /// SkyTrak's shot IDs are local clock time written as if it were UTC.
+    private static func realTime(fromShotID id: Double) -> Double {
+        id - Double(TimeZone.current.secondsFromGMT(for: Date(timeIntervalSince1970: id)))
+    }
+
+    /// Earlier versions stored the shot ID as the time. Every shot's own ID still holds the right one.
+    private static func withCorrectTime(_ shot: Shot) -> Shot {
+        guard let stamp = Double(shot.id.dropFirst()) else { return shot }
+        var s = shot
+        s.time = s.id.hasPrefix("s") ? stamp / 1000 : realTime(fromShotID: stamp)
+        return s
     }
 
     func saveIfNeeded() {
@@ -110,13 +123,12 @@ final class ShotStore {
             if s.official && (row["clubType"] ?? "").isEmpty { return nil }
         } else {
             let totalSpin = (back * back + side * side).squareRoot()
-            s = Shot(id: "o\(Int(shotId))", time: shotId, ballSpeed: ball, launch: launch, hla: hla,
+            s = Shot(id: "o\(Int(shotId))", time: ShotStore.realTime(fromShotID: shotId), ballSpeed: ball, launch: launch, hla: hla,
                      backSpin: back, sideSpin: side, totalSpin: totalSpin,
                      spinAxis: atan2(side, max(abs(back), 1)) * 180 / .pi, official: true)
         }
 
         func positive(_ key: String) -> Double? { value(key).flatMap { $0 > 0 ? $0 : nil } }
-        s.time = shotId
         s.official = true
         s.clubSpeed = positive("clubheadSpeed") ?? s.clubSpeed
         s.smash = positive("PTI_smashFactor") ?? s.smash
@@ -145,9 +157,6 @@ final class ShotStore {
         dirty = true
         if let i = existing {
             shots[i] = s
-            if i + 1 < shots.count && shots[i + 1].time < s.time || i > 0 && shots[i - 1].time > s.time {
-                shots.sort { $0.time < $1.time }
-            }
             return s
         }
         return shots[insert(s)]

@@ -79,22 +79,32 @@ svg text { fill: #fff; font-size: 1.1rem; font-family: inherit; }
 .arr { display: inline-block; width: 0; height: 0; margin-right: .16em; vertical-align: .1em; border-top: .24em solid transparent; border-bottom: .24em solid transparent; }
 .arr.l { border-right: .3em solid #fff; } .arr.r { border-left: .3em solid #fff; }
 
-.six { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .52rem; }
-.big { display: flex; flex-direction: column; align-items: center; padding: .75rem 1.15rem .65rem; min-width: 0; min-height: 0; }
-.big .label { font-size: 1.875rem; }
-.big-value { flex: 1; display: flex; align-items: center; font-size: 8.2rem; line-height: 1; font-weight: 500; white-space: nowrap; }
-.no-details .big-value { font-size: 9.9rem; }
-.big-value.long { font-size: 6.6rem; }
-.no-details .big-value.long { font-size: 8rem; }
+.impact { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: .42rem; }
+.big { display: flex; flex-direction: column; align-items: center; padding: .55rem .9rem .5rem; min-width: 0; min-height: 0; }
+.big .label { font-size: 1.55rem; }
+.big-value { flex: 1; display: flex; align-items: center; font-size: 5.2rem; line-height: 1; font-weight: 500; white-space: nowrap; }
+.big-value.long { font-size: 4.2rem; }
+.big.good { background: #1f9d3a; } .big.close { background: #f0a21f; } .big.off { background: #d03b3b; }
+.big.good .label, .big.good .cue, .big.good .est, .big.good .foot-unit, .big.good .foot-stat i,
+.big.off .label, .big.off .cue, .big.off .est, .big.off .foot-unit, .big.off .foot-stat i { color: #ffffff; }
+.big.close, .big.close .label, .big.close .cue, .big.close .est, .big.close .foot-unit, .big.close .foot-stat i { color: #0a0f13; }
+.big.good .cue, .big.off .cue, .big.close .cue { font-weight: 600; }
+.hero { grid-column: span 2; grid-row: span 2; }
+.hero .label { font-size: 2.4rem; }
+.hero .big-value { font-size: 14rem; }
+.cue { color: var(--ink-2); font-size: 1.22rem; min-height: 1.55rem; white-space: nowrap; }
+.hero .cue { font-size: 1.6rem; min-height: 2rem; }
 .foot { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; }
-.foot-stat { font-size: 1.6rem; line-height: 1.06; font-weight: 600; white-space: nowrap; }
-.foot-stat i { display: block; font-style: normal; color: var(--lime); font-size: 1.1rem; font-weight: 600; }
+.foot-stat { font-size: 1.35rem; line-height: 1.06; font-weight: 600; white-space: nowrap; }
+.foot-stat i { display: block; font-style: normal; color: var(--lime); font-size: .95rem; font-weight: 600; }
 .foot-stat.end { text-align: right; }
-.foot-unit { color: var(--ink-2); font-size: 1.4rem; letter-spacing: .1em; text-transform: uppercase; }
+.foot-unit { color: var(--ink-2); font-size: 1.15rem; letter-spacing: .1em; text-transform: uppercase; }
+.hero .foot-stat { font-size: 2rem; }
+.hero .foot-stat i { font-size: 1.3rem; }
 .fresh .big-value, .fresh .mini-value { animation: fresh .9s ease-out; }
-@keyframes fresh { from { color: var(--lime); } to { color: var(--ink); } }
+@keyframes fresh { from { color: var(--lime); } }
 
-.details { flex: none; height: 12.3rem; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .31rem; }
+.details { flex: none; height: 6.4rem; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .31rem; }
 .mini { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: .3rem; min-width: 0; min-height: 0; border-radius: .31rem; }
 .mini .label { font-size: 1.08rem; }
 .mini-value { font-size: 2.5rem; font-weight: 500; line-height: 1.08; white-space: nowrap; }
@@ -173,7 +183,7 @@ th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: l
       <div class="spacer"></div>
       <button id="detailsBtn"></button>
     </div>
-    <div class="six" id="six"></div>
+    <div class="impact" id="impact"></div>
     <div class="details" id="details"></div>
     <div class="pop" id="clubPop" hidden>
       <div id="clubPopTitle"></div>
@@ -206,35 +216,56 @@ const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize
 
 const CLUBS = ['DR','3W','5W','7W','3H','4H','5H','4I','5I','6I','7I','8I','9I','PW','50/W','52/W','54/W','56/W','58/W','60/W','PT'];
 const S = { shots: [], status: null, update: null, nextClub: null, view: 'live', cursor: null, clubMenu: null, menuOpen: false,
-            fresh: false, histSession: null, histClub: null, mapMode: 'shape', mapClearedAt: 0, fill: false, details: true };
+            fresh: false, histSession: null, histClub: null, mapMode: 'shape', mapClearedAt: 0, fill: false, details: true, ranges: {} };
 
-// est: 1 = calculated until SkyTrak's sync, 'path' = follows pathEstimated.
-const SIX = [
-  { l: 'Carry', u: 'Yards', g: s => s.carry, d: 0, est: 1 },
-  { l: 'Total', u: 'Yards', g: s => s.total, d: 0, est: 1 },
+// est: 1 = calculated until SkyTrak's sync, 2 = always SkyTrak's rough estimate, 'path' = follows pathEstimated.
+// band: where this stat's target columns start in SkyTrak's table.
+// cue: a plain-language read of the number. Directions are as seen from the tee, so they hold for either hand.
+const direction = (v, left, right, level) => Math.abs(v) < 0.5 ? level : v > 0 ? right : left;
+const HERO = { l: 'Smash Factor', g: s => s.smash, d: 2, cue: () => 'Ball speed ÷ club speed' };
+const TILES = [
+  { l: 'Launch Angle', u: 'Deg', g: s => s.launch, d: 1, band: 0 },
+  { l: 'Back Spin', u: 'RPM', g: s => s.backSpin, d: 0, band: 4 },
+  { l: 'Descent Angle', u: 'Deg', g: s => s.descent, d: 0, est: 1, band: 8 },
   { l: 'Ball Speed', u: 'MPH', g: s => s.ballSpeed, d: 0 },
   { l: 'Club Speed', u: 'MPH', g: s => s.clubSpeed, d: 0 },
-  { l: 'Launch Angle', u: 'Deg', g: s => s.launch, d: 1 },
-  { l: 'Back Spin', u: 'RPM', g: s => s.backSpin, d: 0 },
+  { l: 'Max Height', u: 'Yards', g: s => s.apex, d: 1, est: 1 },
+  { l: 'Club Path', u: 'Deg', g: s => s.clubPath, d: 1, lr: 1, est: 'path', cue: v => direction(v, 'Swinging left', 'Swinging right', 'Straight') },
+  { l: 'Face to Path', u: 'Deg', g: s => s.faceToPath, d: 1, lr: 1, est: 'path', cue: v => direction(v, 'Curves left', 'Curves right', 'Straight') },
+  { l: 'Face to Target', u: 'Deg', g: s => s.faceToTarget, d: 1, lr: 1, est: 'path', cue: v => direction(v, 'Face aimed left', 'Face aimed right', 'Square') },
+  { l: 'Side Spin', u: 'RPM', g: s => s.sideSpin, d: 0, lr: 1 },
+  { l: 'Spin Axis', u: 'Deg', g: s => s.spinAxis, d: 1, lr: 1 },
 ];
 const DETAILS = [
-  { l: 'Smash', g: s => s.smash, d: 2 },
   { l: 'Side Angle', g: s => s.hla, d: 1, lr: 1 },
-  { l: 'Side Spin', g: s => s.sideSpin, d: 0, lr: 1 },
-  { l: 'Spin Axis', g: s => s.spinAxis, d: 1, lr: 1 },
   { l: 'Total Spin', g: s => s.totalSpin, d: 0 },
-  { l: 'Descent', g: s => s.descent, d: 0, est: 1 },
-  { l: 'Max Height', g: s => s.apex, d: 1, est: 1 },
   { l: 'Offline', g: s => s.offline, d: 0, lr: 1, est: 1 },
-  { l: 'Roll', g: s => s.roll, d: 0, est: 1 },
   { l: 'Flight Time', g: s => s.flightTime, d: 1, est: 1 },
-  { l: 'Club Path', g: s => s.clubPath, d: 1, lr: 1, est: 'path' },
-  { l: 'Face to Path', g: s => s.faceToPath, d: 1, lr: 1, est: 'path' },
-  { l: 'Face to Tgt', g: s => s.faceToTarget, d: 1, lr: 1, est: 'path' },
-  { l: 'Attack', g: s => s.attackAngle, d: 1, signed: 1 },
-  { l: 'Dyn. Loft', g: s => s.dynamicLoft, d: 1 },
-  { l: 'Spin Loft', g: s => known(s.dynamicLoft) && known(s.attackAngle) ? s.dynamicLoft - s.attackAngle : null, d: 1 },
+  { l: 'Angle of Attack', g: s => s.attackAngle, d: 1, signed: 1, est: 2 },
 ];
+
+// SkyTrak's table groups clubs: all woods, all hybrids, and wedges by loft.
+function rangeClub(c) {
+  if (/^\d+W$/.test(c)) return 'FW';
+  if (/^\d+H$/.test(c)) return '2H';
+  if (/^[123]I$/.test(c)) return '4I';
+  if (c === 'GW') return 'PW';
+  if (c === 'LW') return 'SW';
+  const wedge = c.match(/^(\d+)\/W$/);
+  return wedge ? (Number(wedge[1]) <= 52 ? 'PW' : 'SW') : c;
+}
+
+function rating(t, s) {
+  if (t.band == null || !s || !s.club || !known(s.clubSpeed) || !known(t.g(s))) return null;
+  const table = S.ranges[rangeClub(s.club)];
+  if (!table) return null;
+  const speeds = Object.keys(table).map(Number);
+  const row = table[Math.max(Math.min(...speeds), Math.min(Math.max(...speeds), Math.round(s.clubSpeed)))];
+  if (!row) return null;
+  const v = t.g(s), [closeLow, closeHigh, low, high] = row.slice(t.band, t.band + 4);
+  const level = v >= low && v <= high ? 'good' : v >= closeLow && v <= closeHigh ? 'close' : 'off';
+  return { level, text: `${{ good: 'Good', close: 'Close', off: 'Off' }[level]} · Goal ${low}–${high}` };
+}
 
 const known = v => v != null && isFinite(v);
 const num = (v, d = 0) => known(v) ? v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: false }) : '—';
@@ -252,6 +283,7 @@ function valueHTML(t, v) {
 
 function isEstimate(t, s) {
   if (!known(t.g(s))) return false;
+  if (t.est === 2) return true;
   if (t.est === 'path') return !!s.pathEstimated;
   return t.est === 1 && !s.official;
 }
@@ -301,15 +333,17 @@ function values(pool, get) { return pool.map(get).filter(known); }
 const avgText = (t, v) => (t.lr || t.signed) ? signed(mean(v), t.d) : num(mean(v), t.d);
 
 function renderTiles(s, pool) {
-  $('six').innerHTML = SIX.map(t => {
-    const v = s ? values(pool, t.g) : [], stats = v.length > 1;
-    const long = s && num(Math.abs(t.g(s)), t.d).length > 4;
-    return `<div class="panel big">
+  $('impact').innerHTML = [HERO, ...TILES].map(t => {
+    const v = s ? values(pool, t.g) : [], stats = v.length > 1, value = s ? t.g(s) : null;
+    const long = known(value) && num(Math.abs(value), t.d).length + (t.lr || t.signed ? 1 : 0) > 4;
+    const rated = rating(t, s);
+    return `<div class="panel big${t === HERO ? ' hero' : ''}${rated ? ' ' + rated.level : ''}">
       <div class="label">${t.l}${estTag(t, s)}</div>
-      <div class="big-value${long ? ' long' : ''}">${s ? valueHTML(t, t.g(s)) : '—'}</div>
+      <div class="big-value${long ? ' long' : ''}">${s ? valueHTML(t, value) : '—'}</div>
+      <div class="cue">${rated ? rated.text : known(value) && t.cue ? t.cue(value) : ''}</div>
       <div class="foot">
         <div class="foot-stat">${stats ? `<i>AVG</i>${avgText(t, v)}` : ''}</div>
-        <div class="foot-unit">${t.u}</div>
+        <div class="foot-unit">${t.u || ''}</div>
         <div class="foot-stat end">${stats ? `<i>+/-</i>${num(deviation(v), t.d)}` : ''}</div>
       </div>
     </div>`;
@@ -346,7 +380,6 @@ function renderLive() {
   $('latest').hidden = S.cursor == null;
   $('detailsBtn').textContent = S.details ? 'Hide Details' : 'Show All Stats';
   $('details').hidden = !S.details;
-  $('live').classList.toggle('no-details', !S.details);
   $('estNote').textContent = !s || (s.official && !s.pathEstimated) ? ''
     : s.onCourse && !s.official ? 'EST = flat ground. SkyTrak adjusts for terrain.' : "EST = calculated until SkyTrak's next sync";
 
@@ -355,6 +388,7 @@ function renderLive() {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mapMode));
   drawMap(s, session);
   $('live').classList.toggle('fresh', S.fresh);
+  if (S.fresh) setTimeout(() => $('live').classList.remove('fresh'), 1000);
   S.fresh = false;
 }
 
@@ -458,11 +492,11 @@ function drawMap(s, session) {
 }
 
 function renderMapStats(pool) {
-  const carries = pool.map(x => x.carry), sides = pool.map(x => x.offline);
+  const smashes = values(pool, x => x.smash), sides = pool.map(x => x.offline);
   const cell = (name, text) => `<div><i>${name}</i><b>${text}</b></div>`;
   $('mapStats').innerHTML = cell('Shots', pool.length) +
-    cell('Avg Carry', pool.length ? num(mean(carries)) : '—') +
-    cell('Carry +/-', pool.length > 1 ? num(deviation(carries)) : '—') +
+    cell('Avg Smash', smashes.length ? num(mean(smashes), 2) : '—') +
+    cell('Smash +/-', smashes.length > 1 ? num(deviation(smashes), 2) : '—') +
     cell('Offline +/-', pool.length > 1 ? num(deviation(sides)) : '—');
 }
 
@@ -565,6 +599,7 @@ function toast(text) {
 window.receive = m => {
   switch (m.type) {
     case 'shots': S.shots = m.data; render(); break;
+    case 'ranges': S.ranges = m.data; render(); break;
     case 'newShot':
       upsert(m.data);
       S.cursor = null; S.clubMenu = null; S.fresh = S.view === 'live';

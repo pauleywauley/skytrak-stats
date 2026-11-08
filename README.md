@@ -18,7 +18,8 @@ Run it on the same Mac as SkyTrak. With two or more displays it fills the right-
 
 - **Shot Shape / Dispersion** switches the map view. **Clear** starts a fresh map without deleting any history.
 - The green club button picks the club for upcoming shots, because SkyTrak doesn't write its selected club anywhere readable until it syncs. **Change** fixes the club on any single shot.
-- **Hide Details** leaves just the six biggest numbers.
+- **Smash Factor** leads the screen, with the impact numbers around it. **Hide Details** removes the bottom strip.
+- **Launch Angle, Back Spin and Descent Angle** turn green, orange or red using SkyTrak's own targets for the club and club speed, read from your installed copy of SkyTrak. They need a club to be set.
 - **History** lists every session, with averages by club. Click a shot to reopen it.
 
 ## Where the numbers come from
@@ -28,7 +29,7 @@ The app only reads SkyTrak's log files. It doesn't modify SkyTrak or send your d
 | Available | Numbers |
 | --- | --- |
 | About 2 seconds after impact | Ball speed, launch, side angle, spin, spin axis, club speed |
-| When the ball stops | Attack angle, dynamic loft, final club speed |
+| When the ball stops | Attack angle (SkyTrak's rough estimate), final club speed |
 | Calculated live, marked `EST` | Carry, total, roll, offline, max height, descent, flight time, club path, face angles |
 | After SkyTrak's cloud sync (at launch and around midnight) | SkyTrak's official values and club name, which replace the estimates |
 
