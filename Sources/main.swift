@@ -12,7 +12,7 @@ final class StatsWebView: WKWebView {
 
 final class AppController: NSObject, NSApplicationDelegate, WKScriptMessageHandler {
     private let displayKey = "displayName", clubKey = "selectedClub", fillKey = "fillScreen"
-    private let clearedKey = "mapClearedAt", modeKey = "mapMode", detailsKey = "showDetails"
+    private let clearedKey = "mapClearedAt", modeKey = "mapMode", detailsKey = "showDetails", leftyKey = "leftHanded"
     private let defaults = UserDefaults.standard
     private var window: StatsWindow?
     private var windowFillsScreen = false
@@ -133,6 +133,7 @@ final class AppController: NSObject, NSApplicationDelegate, WKScriptMessageHandl
             "mapMode": defaults.string(forKey: modeKey) ?? "shape",
             "fill": wantsFill,
             "showDetails": defaults.object(forKey: detailsKey) as? Bool ?? true,
+            "lefty": defaults.bool(forKey: leftyKey),
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: prefs),
               let text = String(data: body, encoding: .utf8) else { return }
@@ -166,6 +167,7 @@ final class AppController: NSObject, NSApplicationDelegate, WKScriptMessageHandl
         case "clearMap": defaults.set(body["time"] as? Double ?? 0, forKey: clearedKey)
         case "mapMode": defaults.set(body["mode"] as? String, forKey: modeKey)
         case "details": defaults.set(body["show"] as? Bool ?? true, forKey: detailsKey)
+        case "lefty": defaults.set(body["on"] as? Bool ?? false, forKey: leftyKey)
         case "toggleFill":
             defaults.set(!wantsFill, forKey: fillKey)
             placeWindow()

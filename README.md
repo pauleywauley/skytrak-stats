@@ -20,6 +20,8 @@ Run it on the same Mac as SkyTrak. With two or more displays it fills the right-
 - The green club button picks the club for upcoming shots, because SkyTrak doesn't write its selected club anywhere readable until it syncs. **Change** fixes the club on any single shot.
 - **Smash Factor** leads the screen, with the impact numbers around it. **Hide Details** removes the bottom strip.
 - **Launch Angle, Back Spin and Descent Angle** turn green, orange or red using SkyTrak's own targets for the club and club speed, read from your installed copy of SkyTrak. They need a club to be set.
+- **Smash Factor** is colored against TrackMan's 2023 LPGA Tour average for the club: green within 0.05, orange within 0.10.
+- The card above the map names the shot (Push, Block, Pull, Draw, Fade, Hook, Slice) from where it started and how spin curved it. Set the golfer's hand in the menu.
 - **History** lists every session, with averages by club. Click a shot to reopen it.
 
 ## Where the numbers come from

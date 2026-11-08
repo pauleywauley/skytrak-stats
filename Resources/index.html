@@ -56,6 +56,12 @@ button:disabled { opacity: .35; cursor: default; }
 .map-stats i { display: block; font-style: normal; color: var(--lime); font-weight: 600; font-size: 1.04rem; letter-spacing: .03em; text-transform: uppercase; }
 .map-stats b { font-size: 1.88rem; font-weight: 500; line-height: 1.05; }
 .none { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; color: var(--ink-2); font-size: 1.45rem; text-align: center; }
+.shape-card { position: absolute; z-index: 2; top: 4rem; left: .73rem; right: .73rem; padding: .55rem .8rem .5rem; border-radius: .42rem; background: rgba(4,7,9,.78); text-align: center; }
+.shape-name { font-size: 3.4rem; font-weight: 600; letter-spacing: .02em; line-height: 1.05; text-transform: uppercase; white-space: nowrap; }
+.shape-facts { display: grid; grid-template-columns: 1fr 1fr; margin-top: .25rem; }
+.shape-facts i { display: block; font-style: normal; color: var(--lime); font-size: 1.1rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+.shape-facts b { font-size: 1.7rem; font-weight: 500; white-space: nowrap; }
+.shape-note { color: var(--ink-2); font-size: 1.05rem; margin-top: .2rem; white-space: nowrap; }
 svg { display: block; }
 svg text { fill: #fff; font-size: 1.1rem; font-family: inherit; }
 #estNote, #scaleNote { position: absolute; z-index: 2; bottom: 5rem; color: var(--ink-2); font-size: 1.05rem; }
@@ -132,6 +138,7 @@ table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nu
 th { position: sticky; top: -.4rem; background: var(--panel); color: var(--ink-2); font-weight: 500; font-size: 1.05rem; letter-spacing: .02em; text-transform: uppercase; text-align: right; padding: .3rem .45rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { text-align: right; padding: .34rem .45rem; border-bottom: 1px solid #182128; font-size: 1.22rem; white-space: nowrap; }
 th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+#shotTable th:nth-child(3), #shotTable td:nth-child(3) { text-align: left; }
 #shotTable tbody tr { cursor: pointer; }
 #shotTable tbody tr:hover { background: var(--panel-2); }
 .table-note { color: var(--muted); font-size: 1.05rem; margin-bottom: .5rem; }
@@ -154,6 +161,7 @@ th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: l
   <button id="update">Checking for updates</button>
   <button id="display">Move Screen</button>
   <button id="fill">Full Screen</button>
+  <button id="hand">Golfer: Right-Handed</button>
   <button id="quit">Quit</button>
 </div>
 
@@ -165,6 +173,14 @@ th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: l
         <button data-mode="dispersion">Dispersion</button>
       </div>
       <button id="clear">Clear</button>
+    </div>
+    <div class="shape-card" id="shapeCard" hidden>
+      <div class="shape-name" id="shapeName"></div>
+      <div class="shape-facts">
+        <div><i>Started</i><b id="shapeStart"></b></div>
+        <div><i>Spin curved it</i><b id="shapeCurve"></b></div>
+      </div>
+      <div class="shape-note">Start comes mostly from the face. Curve comes from face vs path.</div>
     </div>
     <div class="map" id="map"></div>
     <div id="estNote"></div>
@@ -216,7 +232,7 @@ const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize
 
 const CLUBS = ['DR','3W','5W','7W','3H','4H','5H','4I','5I','6I','7I','8I','9I','PW','50/W','52/W','54/W','56/W','58/W','60/W','PT'];
 const S = { shots: [], status: null, update: null, nextClub: null, view: 'live', cursor: null, clubMenu: null, menuOpen: false,
-            fresh: false, histSession: null, histClub: null, mapMode: 'shape', mapClearedAt: 0, fill: false, details: true, ranges: {} };
+            fresh: false, histSession: null, histClub: null, mapMode: 'shape', mapClearedAt: 0, fill: false, details: true, ranges: {}, lefty: false };
 
 // est: 1 = calculated until SkyTrak's sync, 2 = always SkyTrak's rough estimate, 'path' = follows pathEstimated.
 // band: where this stat's target columns start in SkyTrak's table.
@@ -255,16 +271,49 @@ function rangeClub(c) {
   return wedge ? (Number(wedge[1]) <= 52 ? 'PW' : 'SW') : c;
 }
 
+// TrackMan 2023 LPGA Tour averages. SkyTrak's table has no smash targets, and TrackMan stops at PW.
+const SMASH_AVERAGE = { DR: 1.49, FW: 1.46, '2H': 1.44, '4I': 1.43, '5I': 1.42, '6I': 1.41, '7I': 1.38, '8I': 1.36, '9I': 1.30, PW: 1.25 };
+const grade = (level, goal) => ({ level, text: `${{ good: 'Good', close: 'Close', off: 'Off' }[level]} · Goal ${goal}` });
+
 function rating(t, s) {
-  if (t.band == null || !s || !s.club || !known(s.clubSpeed) || !known(t.g(s))) return null;
-  const table = S.ranges[rangeClub(s.club)];
+  if (!s || !s.club || !known(s.clubSpeed) || !known(t.g(s))) return null;
+  const club = rangeClub(s.club), v = t.g(s);
+  if (t === HERO) {
+    const average = SMASH_AVERAGE[club];
+    if (!average) return null;
+    return grade(v >= average - 0.05 ? 'good' : v >= average - 0.10 ? 'close' : 'off', `${(average - 0.05).toFixed(2)}+`);
+  }
+  const table = t.band != null && S.ranges[club];
   if (!table) return null;
   const speeds = Object.keys(table).map(Number);
   const row = table[Math.max(Math.min(...speeds), Math.min(Math.max(...speeds), Math.round(s.clubSpeed)))];
   if (!row) return null;
-  const v = t.g(s), [closeLow, closeHigh, low, high] = row.slice(t.band, t.band + 4);
-  const level = v >= low && v <= high ? 'good' : v >= closeLow && v <= closeHigh ? 'close' : 'off';
-  return { level, text: `${{ good: 'Good', close: 'Close', off: 'Off' }[level]} · Goal ${low}–${high}` };
+  const [closeLow, closeHigh, low, high] = row.slice(t.band, t.band + 4);
+  return grade(v >= low && v <= high ? 'good' : v >= closeLow && v <= closeHigh ? 'close' : 'off', `${low}–${high}`);
+}
+
+// Start direction is side angle and curve is spin axis, so both halves are measured.
+// Golf's names depend on handedness; the directions shown beside them never do.
+function shotShape(s) {
+  if (!known(s.hla) || !known(s.spinAxis) || !s.totalSpin) return null;
+  const flip = S.lefty ? -1 : 1, start = s.hla * flip, axis = s.spinAxis * flip, curved = Math.abs(axis) >= 2.5;
+  const curve = !curved ? '' : axis < 0 ? (axis <= -15 ? 'Hook' : 'Draw') : (axis >= 15 ? 'Slice' : 'Fade');
+  const opening = start >= 6 && axis > -2.5 ? 'Block' : start >= 2 ? 'Push' : start <= -2 ? 'Pull' : '';
+  const side = v => (v > 0 ? 'Right' : 'Left');
+  return {
+    name: [opening, curve].join(' ').trim() || 'Straight',
+    start: Math.abs(s.hla) < 2 ? `On line, ${num(Math.abs(s.hla), 1)}°` : `${side(s.hla)} ${num(Math.abs(s.hla), 1)}°`,
+    curve: curved ? `${side(s.spinAxis)}, axis ${num(Math.abs(s.spinAxis), 0)}°` : 'No curve',
+  };
+}
+
+function renderShape(s) {
+  const shape = s && shotShape(s);
+  $('shapeCard').hidden = !shape;
+  if (!shape) return;
+  $('shapeName').textContent = shape.name;
+  $('shapeStart').textContent = shape.start;
+  $('shapeCurve').textContent = shape.curve;
 }
 
 const known = v => v != null && isFinite(v);
@@ -383,6 +432,7 @@ function renderLive() {
   $('estNote').textContent = !s || (s.official && !s.pathEstimated) ? ''
     : s.onCourse && !s.official ? 'EST = flat ground. SkyTrak adjusts for terrain.' : "EST = calculated until SkyTrak's next sync";
 
+  renderShape(s);
   renderTiles(s, pool);
   renderClubMenu(s);
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mapMode));
@@ -420,7 +470,7 @@ function drawMap(s, session) {
   const far = Math.max(40, ...pool.map(x => x.carry));
   const step = far > 180 ? 50 : far > 70 ? 25 : 10;
   const top = Math.ceil(far * 1.12 / step) * step;
-  const margin = { t: 4 * r, b: 1.8 * r };
+  const margin = { t: ($('shapeCard').hidden ? 4 : 15.2) * r, b: 1.8 * r };
   const perYard = (H - margin.t - margin.b) / top;
   const room = (W / 2 - 3 * r) / perYard;
   const widest = Math.max(1, ...pool.map(x => Math.abs(x.offline)));
@@ -525,10 +575,10 @@ function renderHistory() {
   $('byClub').innerHTML = `<thead><tr><th>Club</th><th>Shots</th><th>Ball Speed</th><th>Club Speed</th><th>Smash</th><th>Launch</th><th>Back Spin</th><th>Carry</th><th>Total</th><th>Max Height</th></tr></thead><tbody>` +
     groups.map(({ c, rows }) => `<tr><td>${clubName(c)}</td><td>${rows.length}</td><td>${num(average(rows, 'ballSpeed'), 1)}</td><td>${num(average(rows, 'clubSpeed'), 1)}</td><td>${num(average(rows, 'smash'), 2)}</td><td>${num(average(rows, 'launch'), 1)}°</td><td>${num(average(rows, 'backSpin'))}</td><td>${num(average(rows, 'carry'))}</td><td>${num(average(rows, 'total'))}</td><td>${num(average(rows, 'apex'), 1)}</td></tr>`).join('') + '</tbody>';
 
-  $('shotTable').innerHTML = `<thead><tr><th>When</th><th>Club</th><th>Ball Speed</th><th>Club Speed</th><th>Smash</th><th>Launch</th><th>Side Angle</th><th>Back Spin</th><th>Side Spin</th><th>Carry</th><th>Total</th><th>Offline</th><th>Max Height</th><th>Club Path</th><th>Face to Path</th></tr></thead><tbody>` +
+  $('shotTable').innerHTML = `<thead><tr><th>When</th><th>Club</th><th>Shape</th><th>Ball Speed</th><th>Club Speed</th><th>Smash</th><th>Launch</th><th>Side Angle</th><th>Back Spin</th><th>Side Spin</th><th>Carry</th><th>Total</th><th>Offline</th><th>Club Path</th><th>Face to Path</th></tr></thead><tbody>` +
     [...filtered].reverse().slice(0, 1000).map(s => {
       const est = s.pathEstimated ? '~' : '';
-      return `<tr data-id="${s.id}"><td>${when(s.time)}</td><td>${s.club ? clubShort(s.club) : '—'}</td><td>${num(s.ballSpeed, 1)}</td><td>${num(s.clubSpeed, 1)}</td><td>${num(s.smash, 2)}</td><td>${num(s.launch, 1)}°</td><td>${sideText(s.hla, 1)}</td><td>${num(s.backSpin)}</td><td>${sideText(s.sideSpin)}</td><td>${flagged(s, s.carry, 0)}</td><td>${flagged(s, s.total, 0)}</td><td>${s.official || !known(s.offline) ? '' : '~'}${sideText(s.offline)}</td><td>${flagged(s, s.apex, 1)}</td><td>${known(s.clubPath) ? est : ''}${sideText(s.clubPath, 1)}</td><td>${known(s.faceToPath) ? est : ''}${sideText(s.faceToPath, 1)}</td></tr>`;
+      return `<tr data-id="${s.id}"><td>${when(s.time)}</td><td>${s.club ? clubShort(s.club) : '—'}</td><td>${(shotShape(s) || { name: '—' }).name}</td><td>${num(s.ballSpeed, 1)}</td><td>${num(s.clubSpeed, 1)}</td><td>${num(s.smash, 2)}</td><td>${num(s.launch, 1)}°</td><td>${sideText(s.hla, 1)}</td><td>${num(s.backSpin)}</td><td>${sideText(s.sideSpin)}</td><td>${flagged(s, s.carry, 0)}</td><td>${flagged(s, s.total, 0)}</td><td>${s.official || !known(s.offline) ? '' : '~'}${sideText(s.offline)}</td><td>${known(s.clubPath) ? est : ''}${sideText(s.clubPath, 1)}</td><td>${known(s.faceToPath) ? est : ''}${sideText(s.faceToPath, 1)}</td></tr>`;
     }).join('') + '</tbody>';
 }
 
@@ -577,6 +627,7 @@ function renderUpdate() {
 function render() {
   document.querySelectorAll('[data-view]').forEach(t => t.classList.toggle('on', t.dataset.view === S.view));
   $('fill').textContent = S.fill ? 'Exit Full Screen' : 'Full Screen';
+  $('hand').textContent = S.lefty ? 'Golfer: Left-Handed' : 'Golfer: Right-Handed';
   $('live').hidden = S.view !== 'live';
   $('history').hidden = S.view !== 'history';
   if (S.view === 'live') renderLive(); else renderHistory();
@@ -610,7 +661,7 @@ window.receive = m => {
     case 'update': S.update = m.data; renderUpdate(); break;
     case 'prefs':
       S.nextClub = m.data.club; S.mapClearedAt = m.data.mapClearedAt; S.mapMode = m.data.mapMode;
-      S.fill = m.data.fill; S.details = m.data.showDetails;
+      S.fill = m.data.fill; S.details = m.data.showDetails; S.lefty = m.data.lefty;
       render();
       break;
     case 'misread': toast("SkyTrak didn't get a reading on that one"); break;
@@ -655,6 +706,7 @@ document.addEventListener('click', e => {
   else if (b.id === 'clear') { S.mapClearedAt = Date.now() / 1000; native({ action: 'clearMap', time: S.mapClearedAt }); render(); }
   else if (b.id === 'menuBtn') { S.menuOpen = !S.menuOpen; $('menu').hidden = !S.menuOpen; }
   else if (b.id === 'update' || b.id === 'updateNow') runUpdateAction();
+  else if (b.id === 'hand') { S.lefty = !S.lefty; native({ action: 'lefty', on: S.lefty }); render(); }
   else if (b.id === 'fill') native({ action: 'toggleFill' });
   else if (b.id === 'display') native({ action: 'nextDisplay' });
   else if (b.id === 'quit') native({ action: 'quit' });
