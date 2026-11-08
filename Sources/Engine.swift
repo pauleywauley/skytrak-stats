@@ -209,7 +209,6 @@ final class Engine {
             shot.roll = flight.roll
             shot.total = flight.total
             shot.offline = flight.offline
-            shot.curve = flight.offline - flight.carry * sin(hla * .pi / 180)
             shot.apex = flight.apex
             shot.descent = flight.descent
             shot.flightTime = flight.time

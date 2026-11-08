@@ -16,7 +16,6 @@ struct Shot: Codable {
     var roll: Double?
     var total: Double?
     var offline: Double?
-    var curve: Double?
     var apex: Double?
     var descent: Double?
     var flightTime: Double?
@@ -114,8 +113,6 @@ final class ShotStore {
             s = Shot(id: "o\(Int(shotId))", time: shotId, ballSpeed: ball, launch: launch, hla: hla,
                      backSpin: back, sideSpin: side, totalSpin: totalSpin,
                      spinAxis: atan2(side, max(abs(back), 1)) * 180 / .pi, official: true)
-            let model = Flight.simulate(ballMph: ball, launch: launch, hla: hla, back: back, side: side)
-            s.curve = model.offline - model.carry * sin(hla * .pi / 180)
         }
 
         func positive(_ key: String) -> Double? { value(key).flatMap { $0 > 0 ? $0 : nil } }
