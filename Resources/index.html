@@ -7,9 +7,10 @@
 :root {
   color-scheme: dark;
   --page: #040709; --panel: #0a0f13; --panel-2: #121a20; --line: #25313a; --ring: rgba(255,255,255,.09);
-  --ink: #ffffff; --ink-2: #c9d1d6; --muted: #8b979f; --lime: #a6ce39;
+  --ink: #e9ede6; --ink-2: #bcc4bd; --muted: #87928a; --lime: #a3bb6a;
   --turf-dark: #0c2612; --turf-light: #1a4a24;
-  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b;
+  --good: #3f8a4f; --warn: #bf9a45; --crit: #a94a40;
+  --fill-good: #24502e; --fill-close: #5f5527; --fill-off: #66352c;
 }
 /* Everything is sized in rem so the layout fills any monitor without scrolling. */
 html { font-size: min(1vw, 1.778vh); }
@@ -44,8 +45,11 @@ button:disabled { opacity: .35; cursor: default; }
 .menu button { display: block; width: 100%; height: 2.9rem; padding: 0 .9rem; border-radius: .3rem; text-align: left; font-size: 1.3rem; letter-spacing: .03em; text-transform: uppercase; }
 .menu button:hover { background: rgba(255,255,255,.08); }
 
-/* Left third: map */
-.map-panel { position: relative; width: 33.33rem; flex: none; overflow: hidden; display: flex; flex-direction: column; border-radius: .42rem; background: linear-gradient(0deg, var(--turf-dark), var(--turf-light)); }
+/* Live screen: advice across the top, map and stat boxes below */
+#live { position: relative; display: grid; gap: .5rem; grid-template-columns: 30rem minmax(0, 1fr) 22rem; grid-template-rows: 3.75rem 20.5rem minmax(0, 1fr) 5.9rem;
+  grid-template-areas: "tools tools tools" "coach coach hero" "map tiles tiles" "map strip strip"; }
+#live.no-details { grid-template-rows: 3.75rem 20.5rem minmax(0, 1fr); grid-template-areas: "tools tools tools" "coach coach hero" "map tiles tiles"; }
+.map-panel { grid-area: map; position: relative; min-height: 0; overflow: hidden; display: flex; flex-direction: column; border-radius: .42rem; background: linear-gradient(0deg, var(--turf-dark), var(--turf-light)); }
 .map-tools { position: absolute; z-index: 2; top: .73rem; left: .73rem; right: .73rem; display: flex; justify-content: space-between; align-items: center; }
 .seg { display: flex; padding: .2rem; border-radius: 1.4rem; background: rgba(4,7,9,.72); }
 .seg button { height: 2.3rem; padding: 0 1.15rem; border-radius: 1.15rem; font-size: 1.2rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
@@ -56,20 +60,12 @@ button:disabled { opacity: .35; cursor: default; }
 .map-stats i { display: block; font-style: normal; color: var(--lime); font-weight: 600; font-size: 1.04rem; letter-spacing: .03em; text-transform: uppercase; }
 .map-stats b { font-size: 1.88rem; font-weight: 500; line-height: 1.05; }
 .none { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; color: var(--ink-2); font-size: 1.45rem; text-align: center; }
-.shape-card { position: absolute; z-index: 2; top: 4rem; left: .73rem; right: .73rem; padding: .55rem .8rem .5rem; border-radius: .42rem; background: rgba(4,7,9,.78); text-align: center; }
-.shape-name { color: var(--lime); font-size: 2.2rem; font-weight: 600; letter-spacing: .03em; line-height: 1.05; text-transform: uppercase; white-space: nowrap; }
-.shape-why { font-size: 1.85rem; font-weight: 500; line-height: 1.16; min-height: 4.3rem; margin-top: .15rem; }
-.shape-facts { display: grid; grid-template-columns: 1fr 1fr; margin-top: .25rem; }
-.shape-facts i { display: block; font-style: normal; color: var(--lime); font-size: 1.1rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
-.shape-facts b { font-size: 1.7rem; font-weight: 500; white-space: nowrap; }
 svg { display: block; }
 svg text { fill: #fff; font-size: 1.1rem; font-family: inherit; }
 #estNote, #scaleNote { position: absolute; z-index: 2; bottom: 5rem; color: var(--ink-2); font-size: 1.05rem; }
 #estNote { left: .73rem; } #scaleNote { right: .73rem; }
 
-/* Right two-thirds */
-.right { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .52rem; }
-.toolbar { flex: none; height: 3.75rem; display: flex; align-items: center; gap: .8rem; }
+.toolbar { grid-area: tools; display: flex; align-items: center; gap: .8rem; }
 .club-btn { height: 3.44rem; padding: 0 1.4rem; border-radius: .42rem; background: var(--lime); color: #0a0f13; font-size: 1.98rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; display: flex; align-items: center; gap: .6rem; }
 .club-btn small { font-size: 1.1rem; font-weight: 600; letter-spacing: .05em; }
 .nav { width: 3.1rem; height: 3.1rem; border-radius: .42rem; background: var(--panel-2); font-size: 1.8rem; line-height: 1; }
@@ -83,40 +79,50 @@ svg text { fill: #fff; font-size: 1.1rem; font-family: inherit; }
 .label { color: var(--lime); font-weight: 600; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
 .est { color: var(--muted); font-size: .62em; font-weight: 500; letter-spacing: .05em; margin-left: .35em; }
 .arr { display: inline-block; width: 0; height: 0; margin-right: .16em; vertical-align: .1em; border-top: .24em solid transparent; border-bottom: .24em solid transparent; }
-.arr.l { border-right: .3em solid #fff; } .arr.r { border-left: .3em solid #fff; }
+.arr.l { border-right: .3em solid var(--ink); } .arr.r { border-left: .3em solid var(--ink); }
 
-.impact { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: .42rem; }
+#hero { grid-area: hero; display: flex; min-width: 0; min-height: 0; }
+.coach { grid-area: coach; padding: .6rem 1.1rem .5rem; display: flex; flex-direction: column; gap: .36rem; min-width: 0; min-height: 0; }
+.coach-head { display: flex; align-items: center; gap: .9rem; }
+#coachTitle { font-size: 3rem; font-weight: 600; letter-spacing: .02em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+.badge { padding: .22rem .7rem; border-radius: .3rem; font-size: 1.15rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; color: var(--ink); }
+.badge.good { background: var(--fill-good); } .badge.close { background: var(--fill-close); } .badge.off { background: var(--fill-off); }
+.coach-legend { margin-left: auto; color: var(--muted); font-size: 1.05rem; white-space: nowrap; }
+.coach-line { display: grid; grid-template-columns: 8.4rem minmax(0, 1fr); align-items: baseline; }
+.coach-line i { font-style: normal; color: var(--lime); font-size: 1.12rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+.coach-line span { font-size: 1.6rem; line-height: 1.17; }
+.coach-line.work { grid-template-columns: 1fr; }
+.coach-line.work i { font-size: 1.3rem; }
+.coach-line.work span { font-size: 3.2rem; font-weight: 600; line-height: 1.1; }
+.impact { grid-area: tiles; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .42rem; }
 .big { display: flex; flex-direction: column; align-items: center; padding: .55rem .9rem .5rem; min-width: 0; min-height: 0; }
 .big .label { font-size: 1.55rem; }
-.big-value { flex: 1; display: flex; align-items: center; font-size: 5.2rem; line-height: 1; font-weight: 500; white-space: nowrap; }
-.big-value.long { font-size: 4.2rem; }
-.big.good { background: #1f9d3a; } .big.close { background: #f0a21f; } .big.off { background: #d03b3b; }
+.big-value { flex: 1; display: flex; align-items: center; font-size: 4.5rem; line-height: 1; font-weight: 500; white-space: nowrap; }
+.big-value.long { font-size: 3.7rem; }
+.big.good { background: var(--fill-good); } .big.close { background: var(--fill-close); } .big.off { background: var(--fill-off); }
 .big.good .label, .big.good .cue, .big.good .est, .big.good .foot-unit, .big.good .foot-stat i,
-.big.off .label, .big.off .cue, .big.off .est, .big.off .foot-unit, .big.off .foot-stat i { color: #ffffff; }
-.big.close, .big.close .label, .big.close .cue, .big.close .est, .big.close .foot-unit, .big.close .foot-stat i { color: #0a0f13; }
+.big.close .label, .big.close .cue, .big.close .est, .big.close .foot-unit, .big.close .foot-stat i,
+.big.off .label, .big.off .cue, .big.off .est, .big.off .foot-unit, .big.off .foot-stat i { color: var(--ink); }
 .big.good .cue, .big.off .cue, .big.close .cue { font-weight: 600; }
-.hero { grid-column: span 2; grid-row: span 2; }
-.hero .label { font-size: 2.4rem; }
-.hero .big-value { font-size: 14rem; }
+.hero { flex: 1; }
+.hero .label { font-size: 1.9rem; }
+.hero .big-value { font-size: 10.6rem; }
 .cue { color: var(--ink-2); font-size: 1.22rem; min-height: 1.55rem; white-space: nowrap; }
-.hero .cue { font-size: 1.6rem; min-height: 2rem; }
+.big.cause { box-shadow: inset 0 0 0 .2rem rgba(233,237,230,.72); }
 .foot { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; }
 .foot-stat { font-size: 1.35rem; line-height: 1.06; font-weight: 600; white-space: nowrap; }
 .foot-stat i { display: block; font-style: normal; color: var(--lime); font-size: .95rem; font-weight: 600; }
 .foot-stat.end { text-align: right; }
-.foot-unit { color: var(--ink-2); font-size: 1.15rem; letter-spacing: .1em; text-transform: uppercase; }
-.hero .foot-stat { font-size: 2rem; }
-.hero .foot-stat i { font-size: 1.3rem; }
-.fresh .big-value, .fresh .mini-value { animation: fresh .9s ease-out; }
+.foot-unit { color: var(--ink-2); font-size: 1.15rem; letter-spacing: .1em; text-transform: uppercase; }.fresh .big-value, .fresh .mini-value { animation: fresh .9s ease-out; }
 @keyframes fresh { from { color: var(--lime); } }
 
-.details { flex: none; height: 6.4rem; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .31rem; }
+.details { grid-area: strip; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .31rem; }
 .mini { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: .3rem; min-width: 0; min-height: 0; border-radius: .31rem; }
 .mini .label { font-size: 1.08rem; }
-.mini-value { font-size: 2.5rem; font-weight: 500; line-height: 1.08; white-space: nowrap; }
+.mini-value { font-size: 2.3rem; font-weight: 500; line-height: 1.04; white-space: nowrap; }
 .mini-avg { color: var(--ink-2); font-size: 1rem; white-space: nowrap; }
 
-.pop { position: absolute; z-index: 5; left: 0; top: 3.95rem; width: 33.33rem; padding: .73rem; border-radius: .52rem; background: var(--panel-2); box-shadow: 0 .8rem 2.4rem rgba(0,0,0,.6); }
+.pop { position: absolute; z-index: 5; left: .62rem; top: 4.3rem; width: 33.33rem; padding: .73rem; border-radius: .52rem; background: var(--panel-2); box-shadow: 0 .8rem 2.4rem rgba(0,0,0,.6); }
 #clubPopTitle { color: var(--lime); font-weight: 600; font-size: 1.25rem; letter-spacing: .03em; text-transform: uppercase; margin: 0 0 .5rem .1rem; }
 #chips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .31rem; }
 .chip { height: 3.1rem; border-radius: .31rem; font-size: 1.4rem; font-weight: 600; background: var(--panel); color: var(--ink); }
@@ -174,38 +180,39 @@ th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: l
       </div>
       <button id="clear">Clear</button>
     </div>
-    <div class="shape-card" id="shapeCard" hidden>
-      <div class="shape-name" id="shapeName"></div>
-      <div class="shape-why" id="shapeWhy"></div>
-      <div class="shape-facts">
-        <div><i>Started</i><b id="shapeStart"></b></div>
-        <div><i>Spin curved it</i><b id="shapeCurve"></b></div>
-      </div>
-    </div>
     <div class="map" id="map"></div>
     <div id="estNote"></div>
     <div id="scaleNote"></div>
     <div class="map-stats" id="mapStats"></div>
   </section>
-  <section class="right">
-    <div class="toolbar">
-      <button class="club-btn" id="clubBtn"></button>
-      <button class="nav" id="prev" aria-label="Previous shot">‹</button>
-      <div id="pos"></div>
-      <button class="nav" id="next" aria-label="Next shot">›</button>
-      <div id="shotClub"></div>
-      <button class="link" id="edit">Change</button>
-      <button class="link" id="latest">Latest</button>
-      <div class="spacer"></div>
-      <button id="detailsBtn"></button>
+  <div class="toolbar">
+    <button class="club-btn" id="clubBtn"></button>
+    <button class="nav" id="prev" aria-label="Previous shot">‹</button>
+    <div id="pos"></div>
+    <button class="nav" id="next" aria-label="Next shot">›</button>
+    <div id="shotClub"></div>
+    <button class="link" id="edit">Change</button>
+    <button class="link" id="latest">Latest</button>
+    <div class="spacer"></div>
+    <button id="detailsBtn"></button>
+  </div>
+  <div class="panel coach">
+    <div class="coach-head">
+      <div id="coachTitle"></div>
+      <div class="badge" id="coachBadge"></div>
+      <div class="coach-legend" id="coachLegend">Outlined boxes show the cause</div>
     </div>
-    <div class="impact" id="impact"></div>
-    <div class="details" id="details"></div>
-    <div class="pop" id="clubPop" hidden>
-      <div id="clubPopTitle"></div>
-      <div id="chips"></div>
-    </div>
-  </section>
+    <div class="coach-line work"><i>Work on</i><span id="coachWork"></span></div>
+    <div class="coach-line"><i>What happened</i><span id="coachWhat"></span></div>
+    <div class="coach-line"><i>Why</i><span id="coachWhy"></span></div>
+  </div>
+  <div id="hero"></div>
+  <div class="impact" id="impact"></div>
+  <div class="details" id="details"></div>
+  <div class="pop" id="clubPop" hidden>
+    <div id="clubPopTitle"></div>
+    <div id="chips"></div>
+  </div>
 </main>
 
 <main class="view" id="history" hidden>
@@ -236,8 +243,8 @@ const S = { shots: [], status: null, update: null, nextClub: null, view: 'live',
 
 // est: 1 = calculated until SkyTrak's sync, 2 = always SkyTrak's rough estimate, 'path' = follows pathEstimated.
 // band: where this stat's target columns start in SkyTrak's table.
-// cue: a plain-language read of the number. Directions are as seen from the tee, so they hold for either hand.
-const direction = (v, left, right, level) => Math.abs(v) < 0.5 ? level : v > 0 ? right : left;
+// sym: good and close limits for a stat that wants to be near zero; club comes from rangeClub.
+const FACE_TO_PATH = { DR: [1.5, 2.5], FW: [2, 3.5], '2H': [2, 3.5], PW: [3.5, 6], SW: [3.5, 6] };
 const HERO = { l: 'Smash Factor', g: s => s.smash, d: 2, cue: () => 'Ball speed ÷ club speed' };
 const TILES = [
   { l: 'Launch Angle', u: 'Deg', g: s => s.launch, d: 1, band: 0 },
@@ -245,17 +252,17 @@ const TILES = [
   { l: 'Descent Angle', u: 'Deg', g: s => s.descent, d: 0, est: 1, band: 8 },
   { l: 'Ball Speed', u: 'MPH', g: s => s.ballSpeed, d: 0 },
   { l: 'Club Speed', u: 'MPH', g: s => s.clubSpeed, d: 0 },
-  { l: 'Max Height', u: 'Yards', g: s => s.apex, d: 1, est: 1 },
-  { l: 'Club Path', u: 'Deg', g: s => s.clubPath, d: 1, lr: 1, est: 'path', cue: v => direction(v, 'Swinging left', 'Swinging right', 'Straight') },
-  { l: 'Face to Path', u: 'Deg', g: s => s.faceToPath, d: 1, lr: 1, est: 'path', cue: v => direction(v, 'Curves left', 'Curves right', 'Straight') },
-  { l: 'Face to Target', u: 'Deg', g: s => s.faceToTarget, d: 1, lr: 1, est: 'path', cue: v => direction(v, 'Face aimed left', 'Face aimed right', 'Square') },
-  { l: 'Side Spin', u: 'RPM', g: s => s.sideSpin, d: 0, lr: 1 },
-  { l: 'Spin Axis', u: 'Deg', g: s => s.spinAxis, d: 1, lr: 1 },
+  { l: 'Club Path', u: 'Deg', g: s => s.clubPath, d: 1, lr: 1, est: 'path', sym: () => [4, 6] },
+  { l: 'Face to Path', u: 'Deg', g: s => s.faceToPath, d: 1, lr: 1, est: 'path', sym: club => FACE_TO_PATH[club] || [2.5, 5] },
+  { l: 'Face to Target', u: 'Deg', g: s => s.faceToTarget, d: 1, lr: 1, est: 'path', sym: () => [2, 5] },
+  { l: 'Spin Axis', u: 'Deg', g: s => s.spinAxis, d: 1, lr: 1, sym: () => [6, 15] },
+  { l: 'Side Spin', u: 'RPM', g: s => s.sideSpin, d: 0, lr: 1, byAxis: 1 },
 ];
 const DETAILS = [
   { l: 'Side Angle', g: s => s.hla, d: 1, lr: 1 },
   { l: 'Total Spin', g: s => s.totalSpin, d: 0 },
   { l: 'Offline', g: s => s.offline, d: 0, lr: 1, est: 1 },
+  { l: 'Max Height', g: s => s.apex, d: 1, est: 1 },
   { l: 'Flight Time', g: s => s.flightTime, d: 1, est: 1 },
   { l: 'Angle of Attack', g: s => s.attackAngle, d: 1, signed: 1, est: 2 },
 ];
@@ -273,11 +280,20 @@ function rangeClub(c) {
 
 // TrackMan 2023 LPGA Tour averages. SkyTrak's table has no smash targets, and TrackMan stops at PW.
 const SMASH_AVERAGE = { DR: 1.49, FW: 1.46, '2H': 1.44, '4I': 1.43, '5I': 1.42, '6I': 1.41, '7I': 1.38, '8I': 1.36, '9I': 1.30, PW: 1.25 };
-const grade = (level, goal) => ({ level, text: `${{ good: 'Good', close: 'Close', off: 'Off' }[level]} · Goal ${goal}` });
+const grade = (level, goal, low, high) => ({ level, low, high, text: `${{ good: 'Good', close: 'Close', off: 'Off' }[level]} · Goal ${goal}` });
 
 function rating(t, s) {
-  if (!s || !s.club || !known(s.clubSpeed) || !known(t.g(s))) return null;
-  const club = rangeClub(s.club), v = t.g(s);
+  if (!s || !known(t.g(s))) return null;
+  const club = s.club ? rangeClub(s.club) : null, v = t.g(s);
+  if (t.sym) {
+    const [good, close] = t.sym(club), size = Math.abs(v);
+    return grade(size <= good ? 'good' : size <= close ? 'close' : 'off', `±${good}°`);
+  }
+  if (t.byAxis) {
+    const tilt = Math.abs(s.spinAxis), limit = Math.round(s.totalSpin * Math.sin(6 * Math.PI / 180) / 10) * 10;
+    return grade(tilt <= 6 ? 'good' : tilt <= 15 ? 'close' : 'off', `±${limit}`);
+  }
+  if (!club || !known(s.clubSpeed)) return null;
   if (t === HERO) {
     const average = SMASH_AVERAGE[club];
     if (!average) return null;
@@ -289,49 +305,113 @@ function rating(t, s) {
   const row = table[Math.max(Math.min(...speeds), Math.min(Math.max(...speeds), Math.round(s.clubSpeed)))];
   if (!row) return null;
   const [closeLow, closeHigh, low, high] = row.slice(t.band, t.band + 4);
-  return grade(v >= low && v <= high ? 'good' : v >= closeLow && v <= closeHigh ? 'close' : 'off', `${low}–${high}`);
+  return grade(v >= low && v <= high ? 'good' : v >= closeLow && v <= closeHigh ? 'close' : 'off', `${low}–${high}`, low, high);
 }
 
-// Ball-flight laws: the ball starts mostly where the face points, and curves by the
-// face relative to the path. start and axis are already mirrored for a left-hander.
-function shapeReason(s, start, axis) {
-  const aim = start >= 2 ? 'open' : start <= -2 ? 'closed' : 'square';
-  const toPath = Math.abs(axis) < 2.5 ? 'matched' : axis < 0 ? 'closed' : 'open';
-  if (toPath === 'matched') {
-    if (aim === 'square') return 'Face and path matched, and both pointed at the target.';
-    return `Face and path matched, but both pointed ${Math.abs(start) >= 6 ? 'well ' : ''}${s.hla > 0 ? 'right' : 'left'} of the target.`;
+// A strike well under her own recent normal, or far under the tour number before there's a baseline.
+function strikeOff(s, pool) {
+  if (!known(s.smash) || !s.club) return false;
+  const own = values(pool.filter(x => x !== s), x => x.smash);
+  if (own.length >= 8) return s.smash < mean(own) * 0.92;
+  const average = SMASH_AVERAGE[rangeClub(s.club)];
+  return !!average && s.smash < average - 0.15;
+}
+
+// The single biggest thing to work on, stated at the level of face and path because that's all the
+// launch monitor can speak to. Uses the same face and path numbers shown in the boxes.
+// A perfect shot started and curved the way it should, so its advice skips direction.
+function workOn(s, pool, mishit, flip, off, bend, landed, perfect) {
+  const own = values(pool.filter(x => x !== s), x => x.smash);
+  const normal = own.length >= 8 ? `your usual ${num(mean(own), 2)}` : `a goal of ${num((SMASH_AVERAGE[rangeClub(s.club || '')] || 0) - 0.05, 2)}`;
+  if (mishit) return `Contact first: ${num(s.smash, 2)} smash against ${normal}. Work on hitting the center of the face.`;
+  if (!known(s.faceToTarget) || !known(s.clubPath)) return '';
+  const face = s.faceToTarget * flip, path = s.clubPath * flip, wide = !perfect && Math.abs(face) > 2, far = !perfect && Math.abs(path) > 4;
+  const faceSay = `Face was about ${num(Math.abs(face))}° ${face > 0 ? `open. Try closing it${Math.abs(face) < 5 ? ' a little' : ''} at impact.` : 'closed. Try keeping it more open at impact.'}`;
+  const pathName = path > 0 ? 'in-to-out' : 'out-to-in';
+  if (wide && far && face * path > 0 && bend < 6) {
+    return `Face and path both pointed about ${num(Math.abs(s.faceToTarget + s.clubPath) / 2)}° ${s.faceToTarget > 0 ? 'right' : 'left'} of the target. Check your aim, then start it closer.`;
   }
-  const gap = `${Math.abs(axis) >= 15 ? 'very ' : ''}${toPath} to your path`;
-  const path = toPath === 'closed' ? 'in-to-out' : 'out-to-in';
-  if (aim === 'square') return `Face was square to the target but ${gap}. Swing path went ${path}.`;
-  if (aim !== toPath) return `Face was ${aim} to the target but ${gap}. Swing path went well ${path}.`;
-  return `Face was ${aim} to the target and ${gap} too. The face did most of this.`;
+  if (wide && (!far || Math.abs(face) / 2 >= Math.abs(path) / 4)) return `${faceSay} ${far ? 'Fix this first.' : 'Path looked good.'}`;
+  if (far) return `Path was about ${num(Math.abs(path))}° ${pathName}. Try a less ${pathName} swing. ${wide ? 'Fix this first.' : 'Face looked good.'}`;
+  if (!perfect && bend >= 6) return `Face and path were about ${num(Math.abs(face - path))}° apart, which made it curve. Try bringing them closer together.`;
+  if (!perfect && off >= 2) return `It started ${num(off, 1)}° ${s.hla > 0 ? 'right' : 'left'} of the target. Try pointing the face a little closer to it.`;
+  if (known(s.offline) && !landed && bend >= 2) return `Good shape. To finish on target, start it a little more to the ${s.spinAxis > 0 ? 'left' : 'right'}.`;
+  const smash = rating(HERO, s);
+  if (smash && smash.level === 'off') return `Direction was good. Smash was ${num(s.smash, 2)}, under the goal. Work on hitting the center of the face.`;
+  const launch = rating(TILES[0], s);
+  if (launch && launch.level === 'off') {
+    const low = s.launch < launch.low;
+    return `Direction was good. Launch was ${num(s.launch, 1)}°, ${low ? 'below' : 'above'} the ${launch.low}–${launch.high} goal. Try ${low ? 'adding' : 'taking off'} a little loft at impact.`;
+  }
+  return 'Everything looked good. Repeat that.';
 }
 
-// Start direction is side angle and curve is spin axis, so both halves are measured.
-// Golf's names depend on handedness; the directions shown beside them never do.
-function shotShape(s) {
+// Reads a shot from the two measured numbers: side angle is where it started, spin axis is how it
+// curved. Under 2 degrees of axis is straight (TrackMan), 6 is SkyTrak's limit for an iron, and
+// 15 is where SkyTrak's article starts treating curve as a problem; nobody authoritative publishes
+// a hook or slice line. Perfect windows follow the published draw and fade recipes. Start and axis are mirrored for a left-hander; directions shown to her are not.
+function coach(s, pool) {
   if (!known(s.hla) || !known(s.spinAxis) || !s.totalSpin) return null;
-  const flip = S.lefty ? -1 : 1, start = s.hla * flip, axis = s.spinAxis * flip, curved = Math.abs(axis) >= 2.5;
-  const curve = !curved ? '' : axis < 0 ? (axis <= -15 ? 'Hook' : 'Draw') : (axis >= 15 ? 'Slice' : 'Fade');
-  const opening = start >= 6 && axis > -2.5 ? 'Block' : start >= 2 ? 'Push' : start <= -2 ? 'Pull' : '';
-  const side = v => (v > 0 ? 'Right' : 'Left');
-  return {
-    name: [opening, curve].join(' ').trim() || 'Straight',
-    why: shapeReason(s, start, axis),
-    start: Math.abs(s.hla) < 2 ? `On line, ${num(Math.abs(s.hla), 1)}°` : `${side(s.hla)} ${num(Math.abs(s.hla), 1)}°`,
-    curve: curved ? `${side(s.spinAxis)}, axis ${num(Math.abs(s.spinAxis), 0)}°` : 'No curve',
-  };
+  const flip = S.lefty ? -1 : 1, start = s.hla * flip, axis = s.spinAxis * flip;
+  const off = Math.abs(start), bend = Math.abs(axis);
+  const dir = v => (v > 0 ? 'right' : 'left');
+  const yards = v => `${num(Math.abs(v))} yd${Math.round(Math.abs(v)) === 1 ? '' : 's'}`;
+  const landed = known(s.offline) && Math.abs(s.offline) <= (['DR', 'FW', '2H'].includes(rangeClub(s.club || '')) ? 10 : 5);
+  const mishit = strikeOff(s, pool);
+
+  const draw = start >= 1 && start <= 3 && axis <= -2 && axis >= -6;
+  const fade = start <= -1 && start >= -3 && axis >= 2 && axis <= 6;
+  const average = SMASH_AVERAGE[rangeClub(s.club || '')];
+  const solid = !average || !known(s.smash) || s.smash >= average - 0.15;
+  const perfect = (draw || fade) && landed && !mishit && solid;
+  const crossing = off >= 2 && bend >= 2 && start * axis < 0;
+
+  const curve = bend < 2 ? '' : axis < 0 ? (bend >= 15 ? 'Hook' : 'Draw') : (bend >= 15 ? 'Slice' : 'Fade');
+  const opening = off < 2 ? '' : start > 0 ? (off > 5 && axis > -2 ? 'Block' : 'Push') : (off > 5 && bend < 2 ? 'Big Pull' : 'Pull');
+  const big = !opening && bend >= 6 && bend < 15 ? 'Big ' : '';
+  const title = perfect ? `Perfect ${draw ? 'Draw' : 'Fade'}` : [opening, big + curve].join(' ').trim() || 'Straight';
+
+  const good = perfect || (off < 2 && bend <= 6) || (crossing && landed && bend <= 6 && off <= 5);
+  const level = good && !mishit ? 'good' : off > 5 || bend >= 15 ? 'off' : 'close';
+
+  const carried = known(s.carry) ? bend * 0.007 * s.carry : 0;
+  const what = `Started ${off < 2 && !perfect ? 'on line' : `${num(off, 1)}° ${dir(s.hla)}`}, `
+    + `${bend < 2 ? 'flew straight' : `curved ${carried >= 1 ? `about ${yards(carried)} ` : ''}${dir(s.spinAxis)}`}`
+    + `${known(s.offline) ? `, and finished ${Math.abs(s.offline) < 1 ? 'on your line' : `${yards(s.offline)} ${dir(s.offline)}`}` : ''}.`;
+
+  const aim = start >= 2 ? 'open' : start <= -2 ? 'closed' : 'square';
+  const gap = `${bend >= 15 ? 'very ' : ''}${axis < 0 ? 'closed' : 'open'} to your path`;
+  let why;
+  if (perfect) {
+    why = `Face pointed a little ${dir(s.hla)} of the target and was ${gap}. That is exactly how a ${draw ? 'draw' : 'fade'} is built.`;
+  } else if (bend < 2) {
+    why = off < 2 ? 'Face and path matched, and both pointed at the target.'
+      : `Face and path matched, but both pointed ${off > 5 ? 'well ' : ''}${dir(s.hla)} of the target.`;
+  } else if (off < 2) {
+    why = `Face was about square to the target but ${gap}. Your path went ${axis < 0 ? 'in-to-out' : 'out-to-in'}.`;
+  } else if (crossing) {
+    why = bend > 6 ? `Face was ${aim} to the target but ${gap}, so it curved more than it needed to.`
+      : `Face was ${aim} to the target but ${gap}, the right recipe for a ${axis < 0 ? 'draw' : 'fade'}.`;
+    if (bend <= 6 && !landed && s.offline * s.hla > 0) why += ` It started too far ${dir(s.hla)} to come all the way back.`;
+  } else {
+    why = `Face was ${aim} to the target and ${gap} too. The face did most of this.`;
+  }
+  if (mishit) why += ' Off-center contact may have added to this.';
+
+  const tiles = bend < 2 ? (off < 2 ? ['Face to Target', 'Face to Path'] : ['Face to Target', 'Club Path'])
+    : off < 2 && !perfect ? ['Face to Path', 'Club Path']
+    : crossing || perfect ? ['Face to Target', 'Face to Path', 'Club Path'] : ['Face to Target', 'Face to Path'];
+  return { title, level, badge: perfect ? 'Textbook' : { good: 'Good', close: 'Playable', off: 'Miss' }[level], what, why, work: workOn(s, pool, mishit, flip, off, bend, landed, perfect), tiles };
 }
 
-function renderShape(s) {
-  const shape = s && shotShape(s);
-  $('shapeCard').hidden = !shape;
-  if (!shape) return;
-  $('shapeName').textContent = shape.name;
-  $('shapeWhy').textContent = shape.why;
-  $('shapeStart').textContent = shape.start;
-  $('shapeCurve').textContent = shape.curve;
+function renderCoach(read, s) {
+  $('coachTitle').textContent = read ? read.title : s ? 'No read on this shot' : 'Hit a shot';
+  $('coachBadge').hidden = !read;
+  $('coachLegend').hidden = !read;
+  if (read) { $('coachBadge').textContent = read.badge; $('coachBadge').className = `badge ${read.level}`; }
+  $('coachWhat').textContent = read ? read.what : '';
+  $('coachWhy').textContent = read ? read.why : '';
+  $('coachWork').textContent = read ? read.work : '';
 }
 
 const known = v => v != null && isFinite(v);
@@ -400,21 +480,27 @@ function values(pool, get) { return pool.map(get).filter(known); }
 const avgText = (t, v) => (t.lr || t.signed) ? signed(mean(v), t.d) : num(mean(v), t.d);
 
 function renderTiles(s, pool) {
-  $('impact').innerHTML = [HERO, ...TILES].map(t => {
+  const read = s && coach(s, pool);
+  renderCoach(read, s);
+  const tile = t => {
     const v = s ? values(pool, t.g) : [], stats = v.length > 1, value = s ? t.g(s) : null;
     const long = known(value) && num(Math.abs(value), t.d).length + (t.lr || t.signed ? 1 : 0) > 4;
     const rated = rating(t, s);
-    return `<div class="panel big${t === HERO ? ' hero' : ''}${rated ? ' ' + rated.level : ''}">
+    const cue = known(value) && t.cue ? t.cue(value) : '';
+    const cause = read && known(value) && read.tiles.includes(t.l);
+    return `<div class="panel big${t === HERO ? ' hero' : ''}${rated ? ' ' + rated.level : ''}${cause ? ' cause' : ''}">
       <div class="label">${t.l}${estTag(t, s)}</div>
       <div class="big-value${long ? ' long' : ''}">${s ? valueHTML(t, value) : '—'}</div>
-      <div class="cue">${rated ? rated.text : known(value) && t.cue ? t.cue(value) : ''}</div>
-      <div class="foot">
+      <div class="cue">${rated ? rated.text : cue || t.u || ''}</div>
+      ${t !== HERO ? '' : `<div class="foot">
         <div class="foot-stat">${stats ? `<i>AVG</i>${avgText(t, v)}` : ''}</div>
-        <div class="foot-unit">${t.u || ''}</div>
+        <div class="foot-unit"></div>
         <div class="foot-stat end">${stats ? `<i>+/-</i>${num(deviation(v), t.d)}` : ''}</div>
-      </div>
+      </div>`}
     </div>`;
-  }).join('');
+  };
+  $('hero').innerHTML = tile(HERO);
+  $('impact').innerHTML = TILES.map(tile).join('');
   $('details').innerHTML = DETAILS.map(t => {
     const v = s ? values(pool, t.g) : [];
     return `<div class="panel mini">
@@ -447,10 +533,10 @@ function renderLive() {
   $('latest').hidden = S.cursor == null;
   $('detailsBtn').textContent = S.details ? 'Hide Details' : 'Show All Stats';
   $('details').hidden = !S.details;
+  $('live').classList.toggle('no-details', !S.details);
   $('estNote').textContent = !s || (s.official && !s.pathEstimated) ? ''
     : s.onCourse && !s.official ? 'EST = flat ground. SkyTrak adjusts for terrain.' : "EST = calculated until SkyTrak's next sync";
 
-  renderShape(s);
   renderTiles(s, pool);
   renderClubMenu(s);
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === S.mapMode));
@@ -488,7 +574,7 @@ function drawMap(s, session) {
   const far = Math.max(40, ...pool.map(x => x.carry));
   const step = far > 180 ? 50 : far > 70 ? 25 : 10;
   const top = Math.ceil(far * 1.12 / step) * step;
-  const margin = { t: ($('shapeCard').hidden ? 4 : 16.6) * r, b: 1.8 * r };
+  const margin = { t: 4 * r, b: 1.8 * r };
   const perYard = (H - margin.t - margin.b) / top;
   const room = (W / 2 - 3 * r) / perYard;
   const widest = Math.max(1, ...pool.map(x => Math.abs(x.offline)));
@@ -497,7 +583,7 @@ function drawMap(s, session) {
   const X = side => W / 2 + side * stretch * perYard, Y = dist => H - margin.b - dist * perYard;
   if (pool.length && stretch !== 1) $('scaleNote').textContent = `Side to side ×${stretch}`;
 
-  let g = '';
+  let g = '', lastLabel = Infinity;
   for (let d = step; d <= top; d += step) {
     let path = '';
     for (let i = 0; i <= 48; i++) {
@@ -507,7 +593,10 @@ function drawMap(s, session) {
     g += `<path d="${path}" fill="none" stroke="rgba(255,255,255,.32)"/>`;
     const edge = (W / 2 - 2.8 * r) / (stretch * perYard);
     const labelY = Y(edge < d ? Math.sqrt(d * d - edge * edge) : d);
-    if (labelY > margin.t) g += `<text x="${W - .6 * r}" y="${labelY + .35 * r}" text-anchor="end">${d}</text>`;
+    if (labelY > margin.t && lastLabel - labelY > 1.3 * r) {
+      g += `<text x="${W - .6 * r}" y="${labelY + .35 * r}" text-anchor="end">${d}</text>`;
+      lastLabel = labelY;
+    }
   }
   g += `<line x1="${X(0)}" x2="${X(0)}" y1="${margin.t}" y2="${Y(0)}" stroke="rgba(255,255,255,.4)"/>`;
   g += `<circle cx="${X(0)}" cy="${Y(0)}" r="${.28 * r}" fill="#fff"/>`;
@@ -596,7 +685,7 @@ function renderHistory() {
   $('shotTable').innerHTML = `<thead><tr><th>When</th><th>Club</th><th>Shape</th><th>Ball Speed</th><th>Club Speed</th><th>Smash</th><th>Launch</th><th>Side Angle</th><th>Back Spin</th><th>Side Spin</th><th>Carry</th><th>Total</th><th>Offline</th><th>Club Path</th><th>Face to Path</th></tr></thead><tbody>` +
     [...filtered].reverse().slice(0, 1000).map(s => {
       const est = s.pathEstimated ? '~' : '';
-      return `<tr data-id="${s.id}"><td>${when(s.time)}</td><td>${s.club ? clubShort(s.club) : '—'}</td><td>${(shotShape(s) || { name: '—' }).name}</td><td>${num(s.ballSpeed, 1)}</td><td>${num(s.clubSpeed, 1)}</td><td>${num(s.smash, 2)}</td><td>${num(s.launch, 1)}°</td><td>${sideText(s.hla, 1)}</td><td>${num(s.backSpin)}</td><td>${sideText(s.sideSpin)}</td><td>${flagged(s, s.carry, 0)}</td><td>${flagged(s, s.total, 0)}</td><td>${s.official || !known(s.offline) ? '' : '~'}${sideText(s.offline)}</td><td>${known(s.clubPath) ? est : ''}${sideText(s.clubPath, 1)}</td><td>${known(s.faceToPath) ? est : ''}${sideText(s.faceToPath, 1)}</td></tr>`;
+      return `<tr data-id="${s.id}"><td>${when(s.time)}</td><td>${s.club ? clubShort(s.club) : '—'}</td><td>${(coach(s, []) || { title: '—' }).title}</td><td>${num(s.ballSpeed, 1)}</td><td>${num(s.clubSpeed, 1)}</td><td>${num(s.smash, 2)}</td><td>${num(s.launch, 1)}°</td><td>${sideText(s.hla, 1)}</td><td>${num(s.backSpin)}</td><td>${sideText(s.sideSpin)}</td><td>${flagged(s, s.carry, 0)}</td><td>${flagged(s, s.total, 0)}</td><td>${s.official || !known(s.offline) ? '' : '~'}${sideText(s.offline)}</td><td>${known(s.clubPath) ? est : ''}${sideText(s.clubPath, 1)}</td><td>${known(s.faceToPath) ? est : ''}${sideText(s.faceToPath, 1)}</td></tr>`;
     }).join('') + '</tbody>';
 }
 
