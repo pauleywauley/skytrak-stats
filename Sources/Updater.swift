@@ -3,28 +3,51 @@ import Cocoa
 enum Installer {
     static let appName = "SkyTrak Stats.app"
 
-    /// Waits for this process to exit, puts the new app in place, then opens it.
+    /// Waits for this process to exit, puts the new app in place if there is one, then opens it.
+    /// Only the insides of an existing app are swapped, so the Dock keeps it as the same app and icon.
     private static let swapScript = """
     pid="$1"; new="$2"; target="$3"
     i=0
     while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 150 ]; do sleep 0.1; i=$((i+1)); done
-    backup="$target.previous"
-    rm -rf "$backup"
-    [ -e "$target" ] && mv "$target" "$backup"
-    if mv "$new" "$target" 2>/dev/null || ditto "$new" "$target"; then
-      rm -rf "$backup"
-    elif [ -e "$backup" ]; then
-      mv "$backup" "$target"
+    [ "$i" -lt 150 ] || kill -9 "$pid" 2>/dev/null
+    if [ -n "$new" ]; then
+      if [ -d "$target/Contents" ]; then
+        old="$target/Contents.previous"
+        rm -rf "$old"
+        if mv "$target/Contents" "$old"; then
+          if mv "$new/Contents" "$target/Contents"; then
+            rm -rf "$old"
+          else
+            rm -rf "$target/Contents"
+            mv "$old" "$target/Contents"
+          fi
+        fi
+      else
+        mv "$new" "$target" || ditto "$new" "$target"
+      fi
+      xattr -dr com.apple.quarantine "$target" 2>/dev/null
     fi
-    xattr -dr com.apple.quarantine "$target" 2>/dev/null
     open "$target"
     """
 
-    static func replaceAndRelaunch(newApp: String, target: String) throws {
+    static func replaceAndRelaunch(newApp: String?, target: String) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", swapScript, "swap", String(getpid()), newApp, target]
+        process.arguments = ["-c", swapScript, "swap", String(getpid()), newApp ?? "", target]
         try process.run()
+    }
+
+    private static func version(of app: String) -> String {
+        NSDictionary(contentsOfFile: app + "/Contents/Info.plist")?["CFBundleShortVersionString"] as? String ?? "0"
+    }
+
+    /// Two running copies would show two icons and both save the shot history.
+    static func anotherCopyIsRunning() -> Bool {
+        #if DEV
+        guard ProcessInfo.processInfo.environment["SKYTRAK_STATS_APPS"] != nil else { return false }
+        #endif
+        return NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .contains { $0.processIdentifier != getpid() && kill($0.processIdentifier, 0) == 0 }
     }
 
     /// The downloaded file installs itself the first time it is opened.
@@ -40,7 +63,15 @@ enum Installer {
         let current = Bundle.main.bundlePath
         if folders.contains(where: { current.hasPrefix($0 + "/") }) { return false }
 
-        for folder in folders {
+        // A download left in a folder must never replace a newer install, so open the install instead.
+        let installed = folders.first { files.fileExists(atPath: $0 + "/" + appName) }
+        if let folder = installed, !Updater.isNewer(version(of: current), than: version(of: folder + "/" + appName)),
+           (try? replaceAndRelaunch(newApp: nil, target: folder + "/" + appName)) != nil {
+            DispatchQueue.main.async { NSApp.terminate(nil) }
+            return true
+        }
+
+        for folder in [installed].compactMap({ $0 }) + folders {
             try? files.createDirectory(atPath: folder, withIntermediateDirectories: true)
             guard files.isWritableFile(atPath: folder) else { continue }
             do {
@@ -70,10 +101,11 @@ final class Updater {
 
     static let repository = "pauleywauley/skytrak-stats"
     static let assetName = "SkyTrakStats.zip"
+    /// Always the newest release, even if one came out after the last check.
+    static let latestDownload = URL(string: "https://github.com/\(repository)/releases/latest/download/\(assetName)")!
 
     var onChange: ((State) -> Void)?
     private(set) var state: State
-    private var assetURL: URL?
 
     init() {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
@@ -114,20 +146,18 @@ final class Updater {
             }
             let latest = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
             let assets = json["assets"] as? [[String: Any]] ?? []
-            let link = assets.first { $0["name"] as? String == Updater.assetName }?["browser_download_url"] as? String
-            let allowed = "https://github.com/\(Updater.repository)/releases/download/"
-            guard Updater.isNewer(latest, than: state.current), let link = link, link.hasPrefix(allowed) else {
+            guard Updater.isNewer(latest, than: state.current),
+                  assets.contains(where: { $0["name"] as? String == Updater.assetName }) else {
                 return set("upToDate", latest: latest)
             }
-            assetURL = URL(string: link)
             set("available", latest: latest)
         }.resume()
     }
 
     func install() {
-        guard state.phase == "available", let url = assetURL else { return }
+        guard state.phase == "available" else { return }
         set("downloading")
-        URLSession.shared.downloadTask(with: url) { [self] location, response, error in
+        URLSession.shared.downloadTask(with: Updater.latestDownload) { [self] location, response, error in
             guard let location = location, (response as? HTTPURLResponse)?.statusCode == 200 else {
                 return set("failed", message: error?.localizedDescription ?? "The download didn't finish.")
             }

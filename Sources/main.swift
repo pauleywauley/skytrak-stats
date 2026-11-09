@@ -23,6 +23,10 @@ final class AppController: NSObject, NSApplicationDelegate, WKScriptMessageHandl
     private var activity: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ note: Notification) {
+        if Installer.anotherCopyIsRunning() {
+            NSApp.terminate(nil)
+            return
+        }
         if Installer.installIfNeeded() { return }
         activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllowingIdleSystemSleep,
                                                          reason: "Watching SkyTrak for new shots")
